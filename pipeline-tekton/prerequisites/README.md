@@ -12,4 +12,4 @@
 
 6- install the tekton cli from  : https://github.com/tektoncd/cli
 
-Note: use can add a file "values.yaml" to insert values and call this file using the flag -f in helm install command
+Note: use can add a file "values.yaml" to insert values and call this file using the flag -f in helm install command 
