@@ -80,7 +80,7 @@ spec:
     - name: url
       description: The precise URL that was fetched by this Task
   steps:
-    - name: clone
+    - name: clone-repo
       image: $(params.gitInitImage)
       env:
       - name: PARAM_URL

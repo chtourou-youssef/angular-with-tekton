@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: npm-build
+  name: npm
   labels:
     app.kubernetes.io/version: "0.1"
   annotations:
@@ -32,7 +32,7 @@ spec:
       default: "docker.io/library/node:12-alpine@sha256:dfbebf17bfb014e1e7068e76325a117bccf8679c68aec6a28514184a209c8bae"
       description: The node image you want to use.
   steps:
-    - name: npm-run
+    - name: npm-run-command
       image: $(params.IMAGE)
       command:
         - "npm"

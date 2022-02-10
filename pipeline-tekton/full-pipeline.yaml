@@ -1,8 +1,9 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: build-and-push-angular-project
+  name: full-pipeline
 spec:
+  serviceAccountName: service-account
   workspaces:
     - name: shared-workspace
       volumeClaimTemplate:
@@ -24,11 +25,12 @@ spec:
             workspace: shared-workspace
         params:
           - name: url
-            value: https://github.com/angularexample/angular-8-example-app
+            value: https://github.com/chtourou-youssef/angular-with-tekton
           - name: subdirectory
             value: ""
           - name: deleteExisting
             value: "true"
+
       - name: install-dependencies
         taskRef:
           name: npm-build
@@ -43,6 +45,7 @@ spec:
               - install
         runAfter:
           - fetch-repository
+
       - name: build-project
         taskRef:
           name: npm-build
@@ -58,11 +61,32 @@ spec:
               - build
         runAfter:
           - install-dependencies
-      - name: list-project
+          
+      - name: build-and-push-to-docker-registrey
         taskRef:
-          name: command
+          name: build-and-push-to-registry
         workspaces:
           - name: source
             workspace: shared-workspace
+        params:
+          - name: pathToDockerfile
+            value: Dockerfile
+          - name: "imageUrl"
+            value: "registry-docker-registry.kube-system:5000/app"
+          - name: "imageTag"
+            value: "0.0.3"
         runAfter:
-          - build-project
+          - "list-project"
+
+      - name: apply-to-k8s
+        taskRef:
+          name: deploy-application
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        params:
+          - name: pathToYamlFile
+            value: infra/deploy.yaml
+        runAfter:
+          - "build-and-push-to-docker-registrey"
+      
