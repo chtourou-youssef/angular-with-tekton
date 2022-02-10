@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: build-and-push-to-registry
+spec:
+    workspaces:
+      - name: source
+    params:
+      - name: EXTRA_ARGS
+        type: array
+        default: []
+      - name: pathToDockerfile
+        description: The path to the Dockerfile to build
+      - name: imageUrl
+        description: value should be like - us.icr.io/test_namespace/builtImageApp
+      - name: imageTag
+        description: Tag to apply to the built image
+      - name: CONTEXT
+        description: The build context used by Kaniko.
+        default: ./
+    steps:
+    - name: build-and-push-to-registry
+      workingDir: $(workspaces.source.path)
+      image: gcr.io/kaniko-project/executor:v1.5.1
+      args:
+        - $(params.EXTRA_ARGS[*])
+        - "--dockerfile=$(inputs.params.pathToDockerfile)"
+        - "--context=$(workspaces.source.path)/$(params.CONTEXT)"
+        - "--destination=$(inputs.params.imageUrl):$(inputs.params.imageTag)"
+        - "--insecure"
+        - "--insecure-pull"
+        - "--skip-tls-verify"
+        - "--skip-tls-verify-pull"

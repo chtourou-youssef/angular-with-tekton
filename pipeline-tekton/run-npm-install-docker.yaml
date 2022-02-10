@@ -1,0 +1,99 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: build-and-push-angular-project-docker
+spec:
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+  pipelineSpec:
+    workspaces:
+      - name: shared-workspace
+    tasks:
+      - name: fetch-repository
+        taskRef:
+          name: git-clone
+        workspaces:
+          - name: output
+            workspace: shared-workspace
+        params:
+          - name: url
+            value: https://github.com/chtourou-youssef/angular-with-tekton
+          - name: subdirectory
+            value: ""
+          - name: deleteExisting
+            value: "true"
+
+      - name: install-dependencies
+        taskRef:
+          name: npm-build
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        params:
+          - name: PATH_CONTEXT
+            value: "."
+          - name: ARGS
+            value:
+              - install
+        runAfter:
+          - fetch-repository
+
+      - name: build-project
+        taskRef:
+          name: npm-build
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        params:
+          - name: PATH_CONTEXT
+            value: "."
+          - name: ARGS
+            value:
+              - run 
+              - build
+        runAfter:
+          - install-dependencies
+
+      - name: list-project
+        taskRef:
+          name: command
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        runAfter:
+          - build-project
+
+      - name: build-and-push-to-docker-registrey
+        taskRef:
+          name: build-and-push-to-registry
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        params:
+          - name: pathToDockerfile
+            value: Dockerfile
+          - name: "imageUrl"
+            value: "registry-docker-registry.kube-system:5000/app"
+          - name: "imageTag"
+            value: "0.0.2"
+        runAfter:
+          - "list-project"
+
+      - name: apply-to-k8s
+        taskRef:
+          name: deploy-application
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        params:
+          - name: pathToYamlFile
+            value: Dockerfile
+        runAfter:
+          - "build-and-push-to-docker-registrey"
