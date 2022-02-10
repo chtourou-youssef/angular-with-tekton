@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-svc
+  labels:
+    app: nginx
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      name: app
+      nodePort: 32001
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-dep
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: app
+        # Because kube-registry-proxy is present localhost access is via http instead of https
+        image: localhost:5000/app:0.0.2
+        ports:
+        - containerPort: 80
