@@ -5,25 +5,38 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    name: Build and Test
+  clone-repo:
+    name: clone-repo
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [12.x]
-
 
     steps:
     - name: Clone repository
       uses: actions/checkout@v2
-      
+  
+  install-dependency:
+    name: install-dependenct
+    runs-on: ubuntu-latest
+    needs: clone-repo
+    
+    steps:
     - name: install npm
       run: npm install
+     
+  build-app:
+    name: build-app
+    runs-on: ubuntu-latest
+    needs: install-dependency
+    
+    steps:
+    - name: build npm
+      run: npm run-build
       
-    - name: run build
-      run: npm run build 
-      
+  package-app:
+    name: package-app
+    runs-on: ubuntu-latest
+    needs: build-app
+    
+    steps:      
     - name: publish artifact
       uses: actions/upload-artifact@v2
       if: success()
@@ -31,22 +44,4 @@ jobs:
         name: deploy_dist
         path: dist
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout Artifact
-        uses: actions/checkout@v1
-        
-      - name: Download build
-        uses: actions/download-artifact@v1
-        with:
-          name: deploy_dist
-          
-      - name: Deploy to GitHub Pages
-        uses: chtourou-youssef/angular-with-tekton@releases/v3
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: main
-          FOLDER: deploy_dist/angular-demo
     
