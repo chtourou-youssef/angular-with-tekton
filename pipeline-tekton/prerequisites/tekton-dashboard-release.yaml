@@ -1,5 +1,5 @@
 # From https://github.com/tektoncd/dashboard/blob/master/docs/README.md#installation
-# Changed service to NodePort
+# Changed service to NodePortd
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
